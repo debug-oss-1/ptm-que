@@ -1,0 +1,1275 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PTM Bulk Setup – Rooms & Admins</title>
+    <script
+      defer
+      src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+    ></script>
+    <script
+      defer
+      src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"
+    ></script>
+    <style>
+      body {
+        font-family:
+          system-ui,
+          Segoe UI,
+          Arial,
+          sans-serif;
+        background: #f1f5f9;
+        margin: 0;
+        padding: 20px;
+        color: #0f172a;
+      }
+      .wrap {
+        max-width: 980px;
+        margin: auto;
+      }
+      .card {
+        background: #fff;
+        border-radius: 14px;
+        padding: 18px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 4px;
+      }
+      h2 {
+        font-size: 16px;
+        margin: 0 0 10px;
+      }
+      input {
+        padding: 9px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        font-size: 14px;
+        margin: 0 6px 6px 0;
+        min-width: 220px;
+      }
+      button {
+        padding: 9px 16px;
+        border: 0;
+        border-radius: 10px;
+        background: #4f46e5;
+        color: #fff;
+        font-weight: 600;
+        cursor: pointer;
+        margin: 0 6px 6px 0;
+      }
+      button.alt {
+        background: #e2e8f0;
+        color: #0f172a;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+      th,
+      td {
+        padding: 7px 10px;
+        border-bottom: 1px solid #e2e8f0;
+        text-align: left;
+      }
+      th {
+        background: #f8fafc;
+        position: sticky;
+        top: 0;
+      }
+      td.cc {
+        cursor: pointer;
+      }
+      td.cc:hover {
+        background: #eef2ff;
+      }
+      td.pw,
+      td.id {
+        font-family: ui-monospace, Consolas, monospace;
+      }
+      .ok {
+        color: #059669;
+        font-weight: 600;
+      }
+      .err {
+        color: #dc2626;
+        font-weight: 600;
+      }
+      .wait {
+        color: #d97706;
+      }
+      #msg {
+        font-size: 14px;
+        margin-top: 6px;
+      }
+      #precheck {
+        font-size: 14px;
+        margin: 8px 0;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: #eef2ff;
+        color: #312e81;
+        display: none;
+      }
+      .scroll {
+        max-height: 560px;
+        overflow: auto;
+      }
+      input[type="checkbox"] {
+        min-width: 0;
+        margin: 0 8px 0 0;
+        vertical-align: middle;
+      }
+      .danger {
+        border: 1px solid #fecaca;
+        background: #fef2f2;
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin: 10px 0;
+        font-size: 14px;
+        color: #7f1d1d;
+      }
+      .danger label {
+        display: block;
+        margin: 6px 0;
+        color: #0f172a;
+      }
+      button.danger-btn {
+        background: #dc2626;
+      }
+
+      /* ---- login gate ---- */
+      body.locked main,
+      body.locked #app {
+        display: none;
+      }
+      #auth-gate {
+        position: fixed;
+        inset: 0;
+        background: #f1f5f9;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        padding: 20px;
+      }
+      #auth-gate .box {
+        background: #fff;
+        border-radius: 16px;
+        padding: 26px;
+        width: 100%;
+        max-width: 380px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        font-family: system-ui, Arial, sans-serif;
+      }
+      #auth-gate h2 {
+        margin: 0 0 4px;
+        font-size: 20px;
+        color: #0f172a;
+      }
+      #auth-gate p {
+        margin: 0 0 14px;
+        font-size: 13px;
+        color: #64748b;
+      }
+      #auth-gate input {
+        width: 100%;
+        padding: 11px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        font-size: 15px;
+        margin: 0 0 10px;
+        box-sizing: border-box;
+      }
+      #auth-gate button {
+        width: 100%;
+        padding: 12px;
+        border: 0;
+        border-radius: 10px;
+        background: #4f46e5;
+        color: #fff;
+        font-weight: 700;
+        font-size: 15px;
+        cursor: pointer;
+      }
+      #auth-gate button:disabled {
+        opacity: 0.6;
+      }
+      #gate-error {
+        color: #dc2626;
+        font-size: 13px;
+        min-height: 18px;
+        margin-top: 8px;
+      }
+      #logout-btn {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 50;
+        padding: 8px 14px;
+        border: 0;
+        border-radius: 10px;
+        background: #e2e8f0;
+        color: #0f172a;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      body.locked #logout-btn {
+        display: none;
+      }
+    </style>
+  </head>
+  <body class="locked">
+    <!-- Super-admin login gate: page content stays hidden until a super admin logs in -->
+    <div id="auth-gate">
+      <div class="box">
+        <h2>Super Admin Login</h2>
+        <p>Login with your super admin account to continue.</p>
+        <input
+          id="gate-email"
+          type="email"
+          placeholder="Super admin email"
+          autocomplete="username"
+        />
+        <input
+          id="gate-pass"
+          type="password"
+          placeholder="Password"
+          autocomplete="current-password"
+        />
+        <button id="gate-btn">Login</button>
+        <div id="gate-error"></div>
+      </div>
+    </div>
+    <button id="logout-btn">Logout</button>
+
+    <div class="wrap" id="app">
+      <div class="card">
+        <h1>PTM Bulk Setup</h1>
+        <div style="font-size: 14px; color: #475569">
+          Creates every class/section, its room, and one admin login per room.
+          You can also <b>replace</b> everything: the old classes and rooms are
+          deleted first, then the list below is created fresh. Passwords are
+          shown in the table below <b>before</b> you start, so you can save
+          them.
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Rooms &amp; admin credentials</h2>
+        <div id="msg"></div>
+        <div id="precheck"></div>
+        <div id="secret-box" class="danger" style="background:#eef2ff;border-color:#c7d2fe;color:#312e81">
+          <b>Step 1 - Master secret</b><br />
+          Type any secret phrase (6+ characters) and <b>remember it</b>. All passwords are made from it, so the
+          same secret always gives the same passwords - on any browser or device. Nothing is stored on this computer.
+          If you change it, passwords for NEW admins change; admins already created keep their old password.<br />
+          <input id="secret-in" type="password" placeholder="Master secret" autocomplete="off" />
+          <button id="secret-btn">Set secret</button>
+        </div>
+        <div class="danger">
+          <b>Replace everything with the list below</b><br />
+          Deletes ALL existing classes, sections and rooms/teachers, then
+          creates the new ones from the list in this file.
+          <label
+            ><input type="checkbox" id="opt-admins" checked />Delete ALL old admin
+            accounts (they can no longer log in)</label
+          >
+          <label
+            ><input type="checkbox" id="opt-data" />Also delete old queue +
+            archive records of the removed rooms (<b>cannot be undone</b>; leave
+            unticked to keep all-time records)</label
+          >
+          <button id="reset" class="danger-btn">
+            Delete old classes &amp; rooms, then create new
+          </button>
+        </div>
+        <button id="run">Create All Rooms + Admins (keep existing)</button>
+        <button id="csv" class="alt">Download credentials CSV</button>
+        <button id="pdf" class="alt">Download credentials PDF</button>
+        <button id="txt" class="alt">Download credentials TXT</button>
+        <button id="copy" class="alt">Copy credentials</button>
+        <button id="check" class="alt">Check existing</button>
+        <button id="test" class="alt">Test logins</button>
+        <div id="copy-panel" class="danger" style="display:none;background:#f0fdf4;border-color:#bbf7d0;color:#14532d">
+          <b>PDF saved - copy the credentials</b><br />
+          <button id="copy-all" class="alt">Copy all (paste into Excel/Sheets)</button>
+          <button id="copy-text" class="alt">Copy as readable text</button>
+          <button id="copy-ids" class="alt">Copy IDs only</button>
+          <button id="copy-pws" class="alt">Copy passwords only</button>
+          <span id="copy-note" class="ok"></span>
+          <textarea id="copy-box" readonly rows="6" style="width:100%;box-sizing:border-box;margin-top:6px;font-family:ui-monospace,Consolas,monospace;font-size:12px;padding:8px;border:1px solid #cbd5e1;border-radius:10px"></textarea>
+        </div>
+        <div class="scroll" style="margin-top: 8px">
+          <table>
+            <thead>
+              <tr>
+                <th>Class</th>
+                <th>Room</th>
+                <th>Admin ID (email)</th>
+                <th>Password</th>
+                <th>Status</th>
+                <th>Copy</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import {
+        initializeApp,
+        deleteApp,
+      } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+      import {
+        getAuth,
+        signInWithEmailAndPassword,
+        createUserWithEmailAndPassword,
+        signOut,
+        onAuthStateChanged,
+      } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+      import {
+        getDatabase,
+        ref,
+        get,
+        set,
+        push,
+        update,
+        remove,
+        serverTimestamp,
+      } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-database.js";
+
+      // ---------- Firebase config (same project as the PTM app) ----------
+      const firebaseConfig = {
+        apiKey: "AIzaSyDaTJ6FYm9j-rb4YD6f6b7acO2ExG1kCZ4",
+        authDomain: "ptm-que-db.firebaseapp.com",
+        databaseURL: "https://ptm-que-db-default-rtdb.firebaseio.com",
+        projectId: "ptm-que-db",
+        storageBucket: "ptm-que-db.firebasestorage.app",
+        messagingSenderId: "254001733371",
+        appId: "1:254001733371:web:0909d719dc013c6b3e9a5e",
+      };
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getDatabase(app);
+
+      // ---------- EDIT HERE: your data & naming pattern ----------
+      // [class, section, room]  (rooms kept as text so "002" keeps its zeros)
+      const ROOMS = [
+        // ---- Pre-school (class = Nursery / KG, room = the pre-school room name) ----
+        ["Nursery", "A", "PreSchool Rose"],
+        ["Nursery", "B", "PreSchool Tulip"],
+        ["KG", "A", "PreSchool Yellow"],
+        ["KG", "B", "PreSchool Blue"],
+        ["KG", "C", "PreSchool Red"],
+        // ---- Classes I-V (slip dated 15/10/26) ----
+        // IB & IC have no room number on the slip: they sit in the Nursery Wing.
+        // Room names must be unique, so each gets its own label.
+        ["1", "A", "005"],
+        ["1", "B", "Nursery Wing - IB"],
+        ["1", "C", "Nursery Wing - IC"],
+        ["2", "A", "009"],
+        ["2", "B", "010"],
+        ["2", "C", "008"],
+        ["3", "A", "004"],
+        ["3", "B", "102"],
+        ["3", "C", "103"],
+        ["4", "A", "107"],
+        ["4", "B", "110"],
+        ["4", "C", "111"],
+        ["5", "A", "106"],
+        ["5", "B", "112"],
+        ["5", "C", "101"],
+        // ---- Classes 6-12 ----
+        ["6", "A", "002"],
+        ["6", "B", "202"],
+        ["6", "C", "001"],
+        ["7", "A", "003"],
+        ["7", "B", "210"],
+        ["7", "C", "203"],
+        ["7", "D", "211"],
+        ["8", "A", "201"],
+        ["8", "B", "204"],
+        ["8", "C", "212"],
+        ["8", "D", "207"],
+        ["9", "A", "302"],
+        ["9", "B", "304"],
+        ["9", "C", "303"],
+        ["9", "D", "316"],
+        ["10", "A", "Library Front"],
+        ["10", "B", "315"],
+        ["10", "C", "314"],
+        ["10", "D", "Library Back"],
+        ["11", "A", "310"],
+        ["11", "B", "311"],
+        ["11", "C", "308"],
+        ["11", "D", "309"],
+        ["12", "A", "307"],
+        ["12", "B", "Physics Lab"],
+        ["12", "C", "306"],
+        ["12", "D", "301"],
+        // ---- Wing incharges (class "Incharge", section = the wing) ----
+        ["Incharge", "PRIMARY", "Incharge Primary Wing"],
+        ["Incharge", "SENIOR", "Incharge Senior Wing"],
+        ["Incharge", "PREPRIMARY", "Incharge Preprimary Wing"],
+      ];
+      const EMAIL_DOMAIN = "evergreenptm.com"; // admin ids look like admin6a-v4@evergreenptm.com
+      const slug = (v) =>
+        String(v)
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, ""); // text classes/sections (e.g. "Pre K") -> "prek"
+      // BATCH makes every admin id brand new (admin6a-v4@...). Old accounts in Firebase Authentication
+      // can never clash with it. Need a fresh set again later? Change "v4" to "v5" and run Replace.
+      const BATCH = "v4";
+      const adminEmail = (c, s) =>
+        `admin${slug(c)}${slug(s)}-${BATCH}` + "@" + EMAIL_DOMAIN;
+      const isWing = (c) => String(c).toLowerCase() === "incharge";
+      const wingName = (s) =>
+        `Incharge ${s.charAt(0) + s.slice(1).toLowerCase()} Wing`; // PRIMARY -> Incharge Primary Wing
+      const teacherName = (c, s) =>
+        isWing(c)
+          ? wingName(s)
+          : /^\d/.test(c)
+            ? `Class ${c}${s} Teacher`
+            : `${c} ${s} Teacher`; // Nursery A Teacher, KG B Teacher // shown in the app as the teacher of that room
+      const adminName = (c, s) =>
+        isWing(c)
+          ? `Admin - ${wingName(s)}`
+          : /^\d/.test(c)
+            ? `Admin ${c}${s}`
+            : `Admin ${c} ${s}`;
+      // ---------- Validate the ROOMS list (same rules as the Super Admin panel) ----------
+      // Class: whole number 1-99 (no leading zeros) OR text (letters/numbers/single spaces, max 20).
+      // Section: UPPERCASE letters/numbers/single spaces. Room: any text, must be unique.
+      const KEY_PATTERN = /^[\p{L}\p{N}]+( [\p{L}\p{N}]+)*$/u;
+      function validateRooms() {
+        const errs = [],
+          seenCS = new Set(),
+          seenRoom = new Set(),
+          seenMail = new Set();
+        ROOMS.forEach(([c, s, room], i) => {
+          const tag = `Row ${i + 1} (${c} ${s})`;
+          const classOk = /^[\d.+-]+$/.test(c)
+            ? /^\d+$/.test(c) && +c >= 1 && +c <= 99 && String(+c) === c
+            : c.length <= 20 && KEY_PATTERN.test(c);
+          if (!classOk)
+            errs.push(
+              `${tag}: invalid class "${c}" (use 1-99 without leading zeros, or plain text)`,
+            );
+          if (!(s.length <= 20 && KEY_PATTERN.test(s) && s === s.toUpperCase()))
+            errs.push(
+              `${tag}: invalid section "${s}" (UPPERCASE letters/numbers only)`,
+            );
+          if (!String(room).trim()) errs.push(`${tag}: room is blank`);
+          const cs = (c + "::" + s).toLowerCase(),
+            rk = String(room).trim().replace(/\s+/g, " ").toLowerCase(),
+            mk = adminEmail(c, s);
+          if (seenCS.has(cs)) errs.push(`${tag}: class/section listed twice`);
+          if (seenRoom.has(rk))
+            errs.push(`${tag}: room "${room}" is used twice`);
+          if (seenMail.has(mk))
+            errs.push(`${tag}: admin id ${mk} clashes with another row`);
+          seenCS.add(cs);
+          seenRoom.add(rk);
+          seenMail.add(mk);
+        });
+        return errs;
+      }
+      const roomErrors = validateRooms();
+
+      // ---------- Passwords come from a master secret (same secret = same passwords, on any device) ----------
+      // Pure-JS SHA-256 + HMAC so it also works on file:// and plain http where crypto.subtle is unavailable.
+      const SHA_K = [], SHA_H = [];
+      for (let n = 2, found = 0; found < 64; n++) {
+        let prime = true;
+        for (let d = 2; d * d <= n; d++) if (n % d === 0) { prime = false; break; }
+        if (!prime) continue;
+        if (found < 8) SHA_H.push(Math.floor((Math.pow(n, 1 / 2) % 1) * 2 ** 32));
+        SHA_K.push(Math.floor((Math.pow(n, 1 / 3) % 1) * 2 ** 32));
+        found++;
+      }
+      function sha256(msg) {
+        const l = msg.length, bitLen = l * 8;
+        const padded = new Uint8Array(((l + 9 + 63) >> 6) << 6);
+        padded.set(msg);
+        padded[l] = 0x80;
+        const dv = new DataView(padded.buffer);
+        dv.setUint32(padded.length - 8, Math.floor(bitLen / 2 ** 32));
+        dv.setUint32(padded.length - 4, bitLen >>> 0);
+        const h = SHA_H.slice(), w = new Uint32Array(64);
+        const rotr = (x, n) => (x >>> n) | (x << (32 - n));
+        for (let o = 0; o < padded.length; o += 64) {
+          for (let i = 0; i < 16; i++) w[i] = dv.getUint32(o + i * 4);
+          for (let i = 16; i < 64; i++) {
+            const s0 = rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >>> 3);
+            const s1 = rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >>> 10);
+            w[i] = (w[i - 16] + s0 + w[i - 7] + s1) >>> 0;
+          }
+          let [a, b, c, d, e, f, g, hh] = h;
+          for (let i = 0; i < 64; i++) {
+            const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+            const ch = (e & f) ^ (~e & g);
+            const t1 = (hh + S1 + ch + SHA_K[i] + w[i]) >>> 0;
+            const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+            const maj = (a & b) ^ (a & c) ^ (b & c);
+            const t2 = (S0 + maj) >>> 0;
+            hh = g; g = f; f = e; e = (d + t1) >>> 0;
+            d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+          }
+          h[0] = (h[0] + a) >>> 0; h[1] = (h[1] + b) >>> 0; h[2] = (h[2] + c) >>> 0; h[3] = (h[3] + d) >>> 0;
+          h[4] = (h[4] + e) >>> 0; h[5] = (h[5] + f) >>> 0; h[6] = (h[6] + g) >>> 0; h[7] = (h[7] + hh) >>> 0;
+        }
+        const out = new Uint8Array(32), odv = new DataView(out.buffer);
+        h.forEach((v, i) => odv.setUint32(i * 4, v));
+        return out;
+      }
+      function hmacSha256(keyStr, msgStr) {
+        const enc = new TextEncoder();
+        let key = enc.encode(keyStr);
+        if (key.length > 64) key = sha256(key);
+        const ipad = new Uint8Array(64).fill(0x36), opad = new Uint8Array(64).fill(0x5c);
+        key.forEach((b, i) => { ipad[i] ^= b; opad[i] ^= b; });
+        const msg = enc.encode(msgStr);
+        const inner = new Uint8Array(64 + msg.length);
+        inner.set(ipad); inner.set(msg, 64);
+        const outer = new Uint8Array(64 + 32);
+        outer.set(opad); outer.set(sha256(inner), 64);
+        return sha256(outer);
+      }
+      // Evg + class + section + @ + 6 characters from the secret, e.g. EvgKGA@K7M2QX  (no look-alike characters)
+      const PW_CHARS = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
+      const passwordFor = (secret, c, s) => {
+        const mac = hmacSha256(secret, adminEmail(c, s));
+        let code = "";
+        for (let i = 0; i < 6; i++) code += PW_CHARS[mac[i] % PW_CHARS.length];
+        return `Evg${String(c + s).replace(/\s+/g, "")}@${code}`;
+      };
+
+      let creds = {}; // filled when the master secret is entered
+      let credsReady = false;
+      const need = () => {
+        if (credsReady) return true;
+        showMsg("Step 1: type your master secret in the blue box and click 'Set secret'.", true);
+        return false;
+      };
+      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+      // ---------- Table ----------
+      const $ = (id) => document.getElementById(id);
+      const esc = (v) =>
+        String(v).replace(
+          /[&<>"']/g,
+          (ch) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[ch],
+        );
+      function renderTable() {
+        $("rows").innerHTML = ROOMS.map(([c, s, room], i) => {
+          const email = adminEmail(c, s);
+          return (
+            `<tr><td>${c} ${s}</td><td>${esc(room)}</td><td class="id cc" data-t="${esc(email)}" title="Click to copy">${email}</td>` +
+            `<td class="pw cc" data-t="${esc(creds[email] || "")}" title="Click to copy">${esc(creds[email] || "enter master secret")}</td><td id="st-${i}">Pending</td>` +
+            `<td><button class="alt" data-copy="${i}">Copy</button></td></tr>`
+          );
+        }).join("");
+      }
+      const setStatus = (i, html) => {
+        $("st-" + i).innerHTML = html;
+      };
+      const showMsg = (t, bad) => {
+        $("msg").innerHTML =
+          `<span class="${bad ? "err" : "ok"}">${esc(t)}</span>`;
+      };
+
+      // ---------- Copy helpers (work on https AND on file:// where navigator.clipboard is blocked) ----------
+      async function copyText(text) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch (_) {
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          ta.style.cssText = "position:fixed;left:-9999px;top:0";
+          document.body.appendChild(ta);
+          ta.select();
+          let ok = false;
+          try { ok = document.execCommand("copy"); } catch (_) {}
+          ta.remove();
+          return ok;
+        }
+      }
+      const readableText = () =>
+        ROOMS.map(([c, s, room]) => {
+          const m = adminEmail(c, s);
+          return `${c} ${s} | Room ${room}\nID: ${m}\nPassword: ${creds[m]}\n`;
+        }).join("\n");
+      const copyNote = (t) => {
+        $("copy-note").textContent = t;
+        setTimeout(() => ($("copy-note").textContent = ""), 3000);
+      };
+      const showCopyPanel = () => {
+        $("copy-panel").style.display = "block";
+        $("copy-box").value = readableText();
+      };
+      const copyBtn = (id, getText, label) =>
+        ($(id).onclick = async () =>
+          copyNote((await copyText(getText())) ? label + " copied." : "Copy blocked - select the text in the box and press Ctrl+C."));
+      copyBtn("copy-all", () => credText("\t"), "All credentials");
+      copyBtn("copy-text", readableText, "Readable text");
+      copyBtn("copy-ids", () => ROOMS.map(([c, s]) => adminEmail(c, s)).join("\n"), "IDs");
+      copyBtn("copy-pws", () => ROOMS.map(([c, s]) => creds[adminEmail(c, s)]).join("\n"), "Passwords");
+      // click any ID or password cell to copy just that value
+      $("rows").addEventListener("click", async (e) => {
+        const cell = e.target.closest("td.cc");
+        if (!cell) return;
+        const ok = await copyText(cell.dataset.t);
+        const old = cell.style.background;
+        cell.style.background = ok ? "#bbf7d0" : "#fecaca";
+        setTimeout(() => (cell.style.background = old), 600);
+      });
+      // per-row Copy button: "id<TAB>password"
+      $("rows").addEventListener("click", async (e) => {
+        const b = e.target.closest("button[data-copy]");
+        if (!b) return;
+        const [c, s] = ROOMS[+b.dataset.copy], m = adminEmail(c, s);
+        const ok = await copyText(`${m}\t${creds[m]}`);
+        b.textContent = ok ? "Copied ✔" : "Blocked";
+        setTimeout(() => (b.textContent = "Copy"), 1500);
+      });
+
+      // ---------- CSV / copy / regenerate ----------
+      const credText = (sep) =>
+        [
+          "Class" + sep + "Room" + sep + "Admin ID" + sep + "Password",
+          ...ROOMS.map(([c, s, room]) =>
+            [`${c} ${s}`, room, adminEmail(c, s), creds[adminEmail(c, s)]].join(
+              sep,
+            ),
+          ),
+        ].join("\n");
+      $("csv").onclick = () => {
+        if (!need()) return;
+        const csv = credText(",");
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+        a.download = "ptm-admin-credentials.csv";
+        a.click();
+      };
+      // plain text file: opens in any phone/PC text app, easiest thing to copy from
+      $("txt").onclick = () => {
+        if (!need()) return;
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([readableText()], { type: "text/plain" }));
+        a.download = "ptm-admin-credentials.txt";
+        a.click();
+      };
+      $("copy").onclick = async () => {
+        if (!need()) return;
+        showMsg(
+          (await copyText(credText("\t")))
+            ? "Credentials copied."
+            : "Copy blocked by the browser - use the box that appears after exporting the PDF.",
+          false,
+        );
+        showCopyPanel();
+      };
+      // ---------- Check what already exists (was this setup run before?) ----------
+      const existing = {}; // row index -> { room, admin, disabled }
+      async function checkExisting(updateRows = true) {
+        const box = $("precheck");
+        box.style.display = "block";
+        box.textContent = "Checking database for existing rooms and admins…";
+        const [uSnap, tSnap] = await Promise.all([
+          get(ref(db, "ptm/users")),
+          get(ref(db, "ptm/config/teachers")),
+        ]);
+        const users = Object.values(uSnap.val() || {}),
+          teachers = Object.values(tSnap.val() || {});
+        let rooms = 0,
+          admins = 0;
+        ROOMS.forEach(([c, s], i) => {
+          const mail = adminEmail(c, s);
+          const admin = users.find(
+            (u) =>
+              u && String(u.email).toLowerCase() === mail && u.role === "admin",
+          );
+          const room = teachers.find(
+            (t) =>
+              t &&
+              t.classTeacherOf &&
+              t.classTeacherOf.classId === c &&
+              t.classTeacherOf.sectionId === s,
+          );
+          existing[i] = {
+            room: !!room,
+            admin: !!admin,
+            disabled: !!admin && admin.status === "disabled",
+          };
+          if (room) rooms++;
+          if (admin) admins++;
+          if (updateRows) {
+            const e = existing[i];
+            setStatus(
+              i,
+              e.room && e.admin
+                ? `<span class="ok">Already set up${e.disabled ? " (admin disabled)" : ""}</span>`
+                : e.room
+                  ? '<span class="wait">Room exists, admin missing</span>'
+                  : e.admin
+                    ? '<span class="wait">Admin exists, room missing</span>'
+                    : "New",
+            );
+          }
+        });
+        const n = ROOMS.length;
+        box.textContent =
+          rooms === n && admins === n
+            ? `Already run before: all ${n} rooms and ${n} admins exist. Running again will not create duplicates.`
+            : rooms + admins === 0
+              ? `Fresh setup: none of these ${n} rooms or admins exist yet.`
+              : `Partly done: ${rooms}/${n} rooms and ${admins}/${n} admins already exist. Only the missing ones will be created.`;
+        return { rooms, admins };
+      }
+      $("check").onclick = () =>
+        checkExisting().catch((e) =>
+          showMsg("Check failed: " + (e.message || e.code), true),
+        );
+
+      // ---------- PDF export ----------
+      $("pdf").onclick = () => {
+        if (!need()) return;
+        const jsPDF = window.jspdf && window.jspdf.jsPDF;
+        if (!jsPDF) {
+          showMsg(
+            "PDF library not loaded. Check your internet and try again.",
+            true,
+          );
+          return;
+        }
+        const doc = new jsPDF();
+        doc.setFontSize(16);
+        doc.text("PTM Admin Credentials", 14, 16);
+        doc.setFontSize(9);
+        doc.text("Generated: " + new Date().toLocaleString(), 14, 22);
+        doc.autoTable({
+          startY: 27,
+          head: [["Class", "Room", "Admin ID", "Password", "Database status"]],
+          body: ROOMS.map(([c, s, room], i) => {
+            const e = existing[i];
+            const st = !e
+              ? "Not checked"
+              : e.room && e.admin
+                ? "Set up"
+                : e.admin
+                  ? "Admin only"
+                  : e.room
+                    ? "Room only"
+                    : "Not created";
+            return [
+              `${c} ${s}`,
+              room,
+              adminEmail(c, s),
+              creds[adminEmail(c, s)],
+              st,
+            ];
+          }),
+          styles: { fontSize: 9 },
+          headStyles: { fillColor: [79, 70, 229] },
+        });
+        const y = doc.lastAutoTable.finalY + 8;
+        doc.setFontSize(8);
+        doc.text(
+          "Keep this file private. Passwords come from the master secret: the same secret always gives the same passwords.",
+          14,
+          y,
+        );
+        // Extra copy-friendly pages: one plain line per admin (easier to select than table cells)
+        let ly = 0;
+        const newListPage = () => {
+          doc.addPage();
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(13);
+          doc.text("Copy-friendly list:  Class   Admin ID   Password", 10, 14);
+          doc.setFont("courier", "normal");
+          doc.setFontSize(9);
+          ly = 24;
+        };
+        newListPage();
+        ROOMS.forEach(([c, s]) => {
+          if (ly > 282) newListPage();
+          const m = adminEmail(c, s);
+          doc.text(`${c} ${s}   ${m}   ${creds[m]}`, 10, ly);
+          ly += 6;
+        });
+        doc.save("ptm-admin-credentials.pdf");
+        // (credentials are copied by clicking the ID / password cells in the table)
+      };
+
+      // ---------- Login gate: nothing is shown until a verified super admin is logged in ----------
+      let gateMsg = "";
+      const unlock = () => {
+        document.body.classList.remove("locked");
+        $("auth-gate").style.display = "none";
+        renderTable();
+        if (roomErrors.length)
+          showMsg("Fix the ROOMS list first: " + roomErrors.join(" | "), true);
+        checkExisting().catch((e) =>
+          showMsg(
+            "Could not check existing data: " + (e.message || e.code),
+            true,
+          ),
+        );
+      };
+      const lock = (msg) => {
+        document.body.classList.add("locked");
+        $("auth-gate").style.display = "flex";
+        $("gate-error").textContent = msg || "";
+        $("rows").innerHTML = "";
+      };
+
+      // Runs on page load (restores session) and after every login/logout
+      onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+          lock(gateMsg);
+          gateMsg = "";
+          return;
+        }
+        try {
+          const me = (await get(ref(db, `ptm/users/${user.uid}`))).val();
+          if (me && me.role === "super-admin" && me.status !== "disabled") {
+            unlock();
+            return;
+          }
+          gateMsg = "Only the super admin can use this page.";
+        } catch (e) {
+          gateMsg = "Could not verify account.";
+        }
+        await signOut(auth); // not a super admin -> back to the gate
+      });
+      $("gate-btn").onclick = async () => {
+        const email = $("gate-email").value.trim(),
+          pass = $("gate-pass").value;
+        if (!email || !pass) {
+          $("gate-error").textContent = "Enter email and password.";
+          return;
+        }
+        $("gate-btn").disabled = true;
+        try {
+          await signInWithEmailAndPassword(auth, email, pass);
+          $("gate-pass").value = "";
+        } catch (e) {
+          const bad = [
+            "auth/invalid-credential",
+            "auth/wrong-password",
+            "auth/user-not-found",
+            "auth/invalid-email",
+          ];
+          $("gate-error").textContent = bad.includes(e.code)
+            ? "Wrong email or password."
+            : e.message || "Login failed.";
+        } finally {
+          $("gate-btn").disabled = false;
+        }
+      };
+      $("gate-pass").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") $("gate-btn").click();
+      });
+      $("logout-btn").onclick = () => signOut(auth);
+
+      // ---------- Master secret -> passwords ----------
+      $("secret-btn").onclick = () => {
+        const secret = $("secret-in").value;
+        if (secret.trim().length < 6) return showMsg("Master secret must be at least 6 characters.", true);
+        creds = {};
+        for (const [c, s] of ROOMS) creds[adminEmail(c, s)] = passwordFor(secret, c, s);
+        credsReady = true;
+        renderTable();
+        showMsg("Secret set. Passwords are ready - same secret = same passwords every time.");
+        if (auth.currentUser) checkExisting().catch(() => {});
+      };
+      $("secret-in").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") $("secret-btn").click();
+      });
+
+      // ---------- Main run ----------
+      const setBusy = (b) => {
+        $("run").disabled = b;
+        $("reset").disabled = b;
+      };
+
+      // ---------- Create the Auth account, write the DB record, then prove login works ----------
+      async function createAndVerifyAdmin(i, classId, sectionId, teacherId, mail, pw, superUid, allUsers) {
+        // ONLY MISSING ADMINS: if this admin id already exists, do not touch its login at all
+        const have = Object.entries(allUsers).find(
+          ([, u]) => u && u.role === "admin" && String(u.email).toLowerCase() === mail,
+        );
+        if (have) {
+          const [haveUid, u] = have;
+          const vApp = initializeApp(firebaseConfig, "chk-" + i + "-" + Date.now());
+          try {
+            await signInWithEmailAndPassword(getAuth(vApp), mail, pw);
+          } catch (_) {
+            const err = new Error(
+              "Already present, but its password is NOT the one from this master secret (it was created with another secret). " +
+                "Firebase Console > Authentication > Users > delete this user, then run again.",
+            );
+            err.code = "bulk/password-mismatch";
+            throw err;
+          } finally {
+            try { await deleteApp(vApp); } catch (_) {}
+          }
+          if (u.roomId !== teacherId) // only re-link the room if it moved; password/login untouched
+            await update(ref(db, `ptm/users/${haveUid}`), { roomId: teacherId, classId, sectionId });
+          return { uid: haveUid, note: "Already present - login verified, not changed" };
+        }
+        const secApp = initializeApp(firebaseConfig, "sec-" + i + "-" + Date.now());
+        try {
+          const sa = getAuth(secApp);
+          let uid,
+            note = "Created";
+          try {
+            uid = (await createUserWithEmailAndPassword(sa, mail, pw)).user.uid;
+          } catch (e) {
+            if (e.code !== "auth/email-already-in-use") throw e;
+            try {
+              uid = (await signInWithEmailAndPassword(sa, mail, pw)).user.uid;
+              note = "Already existed";
+            } catch (_) {
+              const err = new Error(
+                "This email already exists in Authentication with a DIFFERENT password than the one shown. " +
+                  "Firebase Console > Authentication > Users > delete this user, then run again.",
+              );
+              err.code = "bulk/password-mismatch";
+              throw err;
+            }
+          }
+          await signOut(sa);
+
+          // DB record written with the MAIN db (super admin), same as the Super Admin panel
+          await set(ref(db, `ptm/users/${uid}`), {
+            name: adminName(classId, sectionId),
+            email: mail,
+            role: "admin",
+            status: "active",
+            classId,
+            sectionId,
+            roomId: teacherId,
+            createdAt: serverTimestamp(),
+            createdBy: superUid,
+          });
+
+          // remove orphan records of the same email left by deleted Auth users (avoids duplicates)
+          for (const [oldUid, u] of Object.entries(allUsers)) {
+            if (oldUid !== uid && u && u.role === "admin" && String(u.email).toLowerCase() === mail) {
+              await remove(ref(db, `ptm/users/${oldUid}`));
+              delete allUsers[oldUid];
+            }
+          }
+          allUsers[uid] = { email: mail, role: "admin" };
+
+          // VERIFY exactly like login.html does: sign in, then read own DB record
+          const cred = await signInWithEmailAndPassword(sa, mail, pw);
+          const rec = (await get(ref(getDatabase(secApp), `ptm/users/${cred.user.uid}`))).val();
+          if (!rec || rec.role !== "admin" || rec.status !== "active") {
+            const err = new Error(
+              "Account created but the admin could not read its own database record - check your Realtime Database rules for ptm/users.",
+            );
+            err.code = "bulk/verify-record";
+            throw err;
+          }
+          await signOut(sa);
+          return { uid, note: note + " - login verified" };
+        } finally {
+          try { await deleteApp(secApp); } catch (_) {}
+        }
+      }
+
+      // ---------- "Test logins": tries every password in the table against Firebase ----------
+      $("test").onclick = async () => {
+        if (!need()) return;
+        if (!auth.currentUser) return showMsg("Please login first.", true);
+        $("test").disabled = true;
+        let ok = 0, bad = 0;
+        for (let i = 0; i < ROOMS.length; i++) {
+          const [c, s] = ROOMS[i], mail = adminEmail(c, s), pw = creds[mail];
+          setStatus(i, '<span class="wait">Testing…</span>');
+          const secApp = initializeApp(firebaseConfig, "test-" + i + "-" + Date.now());
+          try {
+            const sa = getAuth(secApp);
+            const cred = await signInWithEmailAndPassword(sa, mail, pw);
+            const rec = (await get(ref(getDatabase(secApp), `ptm/users/${cred.user.uid}`))).val();
+            await signOut(sa);
+            if (!rec) throw Object.assign(new Error("Login OK but NO database record (run Create again)"), { code: "bulk/no-record" });
+            if (rec.role !== "admin") throw Object.assign(new Error("Login OK but role is '" + rec.role + "'"), { code: "bulk/role" });
+            if (rec.status === "disabled") throw Object.assign(new Error("Login OK but account is disabled"), { code: "bulk/disabled" });
+            setStatus(i, '<span class="ok">✔ Login works</span>');
+            ok++;
+          } catch (e) {
+            const msg = ["auth/invalid-credential", "auth/wrong-password", "auth/user-not-found"].includes(e.code)
+              ? "Not in Authentication, or password differs from the one shown"
+              : (e.message || e.code);
+            setStatus(i, `<span class="err">✘ ${esc(msg)}</span>`);
+            bad++;
+            if (e.code === "auth/too-many-requests") { showMsg("Firebase is rate-limiting. Wait a while and test again.", true); break; }
+          } finally {
+            try { await deleteApp(secApp); } catch (_) {}
+          }
+          await sleep(200);
+        }
+        showMsg(`Login test finished: ${ok} working, ${bad} not working.`, bad > 0);
+        $("test").disabled = false;
+      };
+
+      async function createAll(skipConfirm = false) {
+        if (!need()) return;
+        if (!auth.currentUser) {
+          showMsg("Please login first.", true);
+          return;
+        }
+        if (roomErrors.length) {
+          showMsg("Fix the ROOMS list first: " + roomErrors.join(" | "), true);
+          return;
+        }
+        if (!skipConfirm) {
+          // If everything is already there, confirm before running again
+          const found = await checkExisting().catch(() => null);
+          if (
+            found &&
+            found.rooms === ROOMS.length &&
+            found.admins === ROOMS.length &&
+            !confirm(
+              "All rooms and admins already exist. Run again anyway? (Nothing will be duplicated.)",
+            )
+          )
+            return;
+        }
+        setBusy(true);
+        try {
+          // 1. Already logged in and verified as super-admin by the login gate
+          const superUid = auth.currentUser.uid;
+          showMsg("Creating…");
+
+          // 2. Read existing teachers so re-running never creates duplicates
+          const teachers =
+            (await get(ref(db, "ptm/config/teachers"))).val() || {};
+
+          const allUsers = (await get(ref(db, "ptm/users"))).val() || {};
+
+          let done = 0,
+            failed = 0,
+            rateLimited = false;
+          for (let i = 0; i < ROOMS.length; i++) {
+            const [classId, sectionId, room] = ROOMS[i];
+            const mail = adminEmail(classId, sectionId),
+              pw = creds[mail];
+            try {
+              setStatus(i, '<span class="wait">Working…</span>');
+
+              // a) class + section nodes (set on child paths only, so nothing existing is wiped)
+              await set(
+                ref(db, `ptm/config/classes/${classId}/name`),
+                isWing(classId) || !/^\d/.test(classId) ? classId : `Class ${classId}`,
+              );
+              await set(
+                ref(
+                  db,
+                  `ptm/config/classes/${classId}/sections/${sectionId}/name`,
+                ),
+                isWing(classId) ? wingName(sectionId) : `Section ${sectionId}`,
+              );
+
+              // b) room = one teacher entry, class teacher (CT) of that class/section
+              let teacherId = Object.keys(teachers).find((id) => {
+                const t = teachers[id].classTeacherOf;
+                return t && t.classId === classId && t.sectionId === sectionId;
+              });
+              const tName = teacherName(classId, sectionId);
+              if (!teacherId) {
+                teacherId = push(ref(db, "ptm/config/teachers")).key;
+                await set(ref(db, `ptm/config/teachers/${teacherId}`), {
+                  name: tName,
+                  room,
+                  classesTaught: [{ classId, sectionId }],
+                  classTeacherOf: { classId, sectionId },
+                  createdAt: serverTimestamp(),
+                });
+                teachers[teacherId] = {
+                  classTeacherOf: { classId, sectionId },
+                };
+              } else {
+                await set(
+                  ref(db, `ptm/config/teachers/${teacherId}/room`),
+                  room,
+                ); // keep room text in sync on re-run
+              }
+              // copy of the room under the class/section (index.html reads this)
+              await set(
+                ref(
+                  db,
+                  `ptm/config/classes/${classId}/sections/${sectionId}/rooms/${teacherId}`,
+                ),
+                { room, teacherName: tName, meetingType: "CT" },
+              );
+
+              // c) runtime queue structure for the room (only if missing)
+              const sessionRef = ref(db, `ptm/rooms/${teacherId}/session`);
+              if (!(await get(sessionRef)).exists()) {
+                await set(sessionRef, {
+                  active: true,
+                  currentStudent: 0,
+                  lastNumber: 0,
+                  startedAt: serverTimestamp(),
+                });
+                await set(ref(db, `ptm/rooms/${teacherId}/students`), {});
+                await set(ref(db, `ptm/rooms/${teacherId}/archive`), {});
+              }
+
+              // d) admin login: created + VERIFIED on a SECONDARY app (super-admin session stays active)
+              const { note } = await createAndVerifyAdmin(
+                i, classId, sectionId, teacherId, mail, pw, superUid, allUsers,
+              );
+              setStatus(i, `<span class="ok">✔ ${esc(note)}</span>`);
+              done++;
+            } catch (err) {
+              console.error(classId, sectionId, err);
+              const label =
+                err.code && !String(err.code).startsWith("bulk/")
+                  ? `[${err.code}] `
+                  : "";
+              setStatus(
+                i,
+                `<span class="err">✘ ${esc(label + (err.message || ""))}</span>`,
+              );
+              failed++;
+              if (
+                ["auth/too-many-requests", "auth/quota-exceeded"].includes(
+                  err.code,
+                )
+              ) {
+                rateLimited = true;
+                break;
+              }
+            }
+            await sleep(250); // be gentle with Firebase sign-up limits
+          }
+          showMsg(
+            rateLimited
+              ? `Stopped: Firebase is rate-limiting account creation (${done} OK so far). Wait 15-60 minutes, then click the button again - finished rows are skipped safely.`
+              : `Finished: ${done} OK, ${failed} failed. Download the credentials CSV or PDF now.`,
+            failed > 0,
+          );
+          checkExisting(false).catch(() => {}); // refresh the summary banner only
+        } catch (err) {
+          console.error(err);
+          showMsg(err.message || "Login failed", true);
+        } finally {
+          setBusy(false);
+        }
+      }
+      $("run").onclick = () => createAll(false);
+
+      // ---------- Replace everything: delete old classes + rooms, then create the new list ----------
+      async function scanOld() {
+        const [tSnap, cSnap, uSnap] = await Promise.all([
+          get(ref(db, "ptm/config/teachers")),
+          get(ref(db, "ptm/config/classes")),
+          get(ref(db, "ptm/users")),
+        ]);
+        const keep = new Set(ROOMS.map(([c, s]) => adminEmail(c, s)));
+        const users = uSnap.val() || {};
+        const admins = Object.entries(users).filter(
+          ([, u]) => u && u.role === "admin",
+        ); // never touches super-admins
+        return {
+          teacherIds: Object.keys(tSnap.val() || {}),
+          classCount: Object.keys(cSnap.val() || {}).length,
+          admins,
+          toDisable: admins.filter(
+            ([, u]) => !keep.has(String(u.email).toLowerCase()),
+          ),
+        };
+      }
+
+      $("reset").onclick = async () => {
+        if (!need()) return;
+        if (!auth.currentUser) {
+          showMsg("Please login first.", true);
+          return;
+        }
+        if (roomErrors.length) {
+          showMsg("Fix the ROOMS list first: " + roomErrors.join(" | "), true);
+          return;
+        }
+        setBusy(true);
+        try {
+          const old = await scanOld();
+          const disableOld = $("opt-admins").checked,
+            wipeData = $("opt-data").checked;
+          const summary =
+            `This will DELETE ${old.classCount} class(es) and ${old.teacherIds.length} room/teacher record(s)` +
+            (disableOld
+              ? `, and delete ${old.toDisable.length} old admin account(s)`
+              : "") +
+            (wipeData
+              ? `, and PERMANENTLY delete the queue + archive records of those rooms`
+              : `. Queue/archive records are kept`) +
+            `.\n\nThen ${ROOMS.length} new rooms + admins will be created.\n\nType RESET to continue.`;
+          if ((prompt(summary) || "").trim() !== "RESET") {
+            showMsg("Cancelled - nothing was changed.", true);
+            return;
+          }
+
+          showMsg("Removing old classes and rooms…");
+          // 1. Admin accounts first: clear the room link so nothing points at a deleted room.
+          //    (Firebase Auth accounts can't be deleted from the browser, so old ones are disabled instead.)
+          for (const [uid] of old.admins) {
+            if (disableOld && old.toDisable.some(([id]) => id === uid))
+              await remove(ref(db, `ptm/users/${uid}`)); // no record = app blocks that login
+            else
+              await update(ref(db, `ptm/users/${uid}`), {
+                roomId: null,
+                classId: null,
+                sectionId: null,
+              });
+          }
+          // 2. Optional: queue + archive data of the removed rooms
+          if (wipeData)
+            for (const id of old.teacherIds)
+              await remove(ref(db, `ptm/rooms/${id}`));
+          // 3. Classes (with their sections + room copies) and teachers
+          await remove(ref(db, "ptm/config/classes"));
+          await remove(ref(db, "ptm/config/teachers"));
+
+          renderTable(); // statuses back to Pending
+          showMsg("Old data removed. Creating new rooms and admins…");
+        } catch (err) {
+          console.error(err);
+          showMsg(
+            "Removal failed, nothing new was created: " +
+              (err.message || err.code),
+            true,
+          );
+          setBusy(false);
+          return;
+        }
+        setBusy(false);
+        await createAll(true); // fresh create (no 'already exists' prompt)
+      };
+    </script>
+  </body>
+</html>

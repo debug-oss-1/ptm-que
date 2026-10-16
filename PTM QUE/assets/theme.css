@@ -1,0 +1,288 @@
+/* =========================================================
+   PTM SYSTEM — THEME LAYER (admin, super-admin, index)
+   Loaded AFTER style.css and Tailwind. Pure CSS: no JavaScript,
+   IDs or class names used by the app were changed.
+   Each page is scoped by a class on <body>:
+     page-staff + page-admin   -> admin.html
+     page-staff + page-super   -> super-admin.html
+     page-index                -> index.html
+   ========================================================= */
+
+/* ---------- Required: super-admin tabs show one panel at a time ---------- */
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: ptm-rise .35s ease both; }
+
+@keyframes ptm-rise  { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes ptm-pop   { from { opacity: 0; transform: translateY(14px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes ptm-sheet { from { opacity: 0; transform: translateY(100%); } to { opacity: 1; transform: none; } }
+@keyframes ptm-dot   { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); } 100% { box-shadow: 0 0 0 9px rgba(16,185,129,0); } }
+
+html { -webkit-text-size-adjust: 100%; }
+
+/* =========================================================
+   ADMIN + SUPER ADMIN (shared)
+   ========================================================= */
+
+/* Animated colour-blob background + room for the fixed footer */
+body.page-staff {
+  background: #eef1fb;
+  padding-bottom: calc(3.4rem + env(safe-area-inset-bottom));
+  overflow-x: clip;
+}
+body.page-staff::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(520px 420px at -5% -8%, rgba(129,140,248,.40), transparent 70%),
+    radial-gradient(460px 380px at 105% 18%, rgba(34,211,238,.26), transparent 70%),
+    radial-gradient(520px 440px at 20% 108%, rgba(232,121,249,.20), transparent 70%);
+}
+
+/* Container widths: phone -> tablet -> desktop */
+@media (min-width: 768px)  { body.page-admin > .max-w-lg  { max-width: 42rem; } }
+@media (min-width: 1280px) { body.page-admin > .max-w-lg  { max-width: 46rem; }
+                             body.page-super > .max-w-4xl { max-width: 72rem; } }
+
+/* Hero header */
+.page-staff header.text-center {
+  position: relative; overflow: hidden; color: #fff;
+  border-radius: 1.5rem; padding: 1.5rem 1.25rem 1.4rem; margin-bottom: 1.25rem;
+  background: linear-gradient(135deg, #312e81 0%, #4f46e5 50%, #7c3aed 100%);
+  box-shadow: 0 20px 44px -20px rgba(67,56,202,.7);
+}
+.page-staff header.text-center::before {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(circle at 90% 0%, rgba(255,255,255,.28), transparent 42%),
+              radial-gradient(circle at 0% 100%, rgba(34,211,238,.30), transparent 50%);
+}
+.page-staff header.text-center::after {
+  content: ""; position: absolute; inset: 0; opacity: .45;
+  background-image: radial-gradient(rgba(255,255,255,.22) 1px, transparent 1px); background-size: 18px 18px;
+  -webkit-mask-image: linear-gradient(to bottom, #000, transparent 85%); mask-image: linear-gradient(to bottom, #000, transparent 85%);
+}
+.page-staff header.text-center > * { position: relative; z-index: 1; }
+.page-staff header h1 {
+  background: none; -webkit-background-clip: border-box; background-clip: border-box;
+  color: #fff; -webkit-text-fill-color: #fff;
+  font-size: clamp(1.1rem, 4.6vw, 1.75rem); line-height: 1.2; text-wrap: balance;
+}
+.page-staff header p { color: rgba(224,231,255,.92); }
+
+/* Top row: status badge + logout */
+.page-staff .session-badge { box-shadow: 0 6px 16px -8px rgba(5,150,105,.6); }
+.page-staff .session-badge::before {
+  content: ""; width: .5rem; height: .5rem; border-radius: 9999px; background: #10b981;
+  animation: ptm-dot 1.6s ease-out infinite;
+}
+.page-staff #logout-btn {
+  padding: .45rem 1rem; border-radius: 9999px; background: #fff; border: 1px solid #e2e8f0;
+  box-shadow: 0 6px 16px -10px rgba(15,23,42,.4); font-weight: 600;
+}
+.page-staff #logout-btn:hover { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
+
+/* Cards */
+.page-staff .card {
+  position: relative; border-radius: 1.4rem; border: 1px solid rgba(255,255,255,.95);
+  box-shadow: 0 18px 44px -26px rgba(49,46,129,.45), 0 2px 6px rgba(15,23,42,.04);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.page-staff .card::before {
+  content: ""; position: absolute; top: 0; left: 1.4rem; right: 1.4rem; height: 3px; border-radius: 0 0 6px 6px;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6, #06b6d4);
+}
+.page-staff .card:hover { box-shadow: 0 24px 50px -26px rgba(49,46,129,.55), 0 2px 6px rgba(15,23,42,.05); }
+
+/* Primary buttons get the brand gradient */
+.page-staff button.bg-indigo-600 {
+  background-image: linear-gradient(135deg, #4f46e5, #7c3aed);
+  box-shadow: 0 10px 22px -12px rgba(79,70,229,.85);
+  transition: transform .15s ease, filter .2s ease, box-shadow .2s ease;
+}
+.page-staff button.bg-indigo-600:hover { filter: brightness(1.08); }
+.page-staff button:active:not(:disabled) { transform: scale(.97); }
+.page-staff button:focus-visible, .page-staff input:focus-visible, .page-staff select:focus-visible {
+  outline: 3px solid rgba(99,102,241,.45); outline-offset: 2px;
+}
+
+/* Banner + toasts */
+.page-staff .banner { border-radius: 1rem; box-shadow: 0 10px 24px -16px rgba(185,28,28,.5); }
+.page-staff #toast-container > div { border-radius: 1rem; backdrop-filter: blur(6px); box-shadow: 0 16px 32px -14px rgba(15,23,42,.45); }
+@media (max-width: 480px) {
+  .page-staff #toast-container { left: .75rem; right: .75rem; max-width: none; top: calc(.75rem + env(safe-area-inset-top)); }
+}
+
+/* Fixed footer respects the phone's safe area */
+.page-staff footer { padding-bottom: calc(.5rem + env(safe-area-inset-bottom)); }
+
+/* ---------- Modals: centred card on desktop, bottom sheet on phones ---------- */
+.modal-overlay { padding: 1rem; overscroll-behavior: contain; }
+.modal-overlay .modal-box {
+  position: relative; width: 100%; max-width: 28rem; margin: 0;
+  border-radius: 1.5rem; border: 1px solid rgba(255,255,255,.85);
+  box-shadow: 0 34px 80px -24px rgba(30,27,75,.55);
+}
+.modal-overlay.visible .modal-box { animation: ptm-pop .24s cubic-bezier(.2,.9,.3,1.15) both; }
+.modal-overlay .modal-box::before {
+  content: ""; position: sticky; display: block; top: -1.5rem; height: 4px; margin: -1.5rem -1.5rem 1.2rem; border-radius: 1.5rem 1.5rem 0 0;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6, #06b6d4);
+}
+.modal-overlay .modal-box h3 { letter-spacing: -.01em; }
+.modal-overlay .modal-box input, .modal-overlay .modal-box select {
+  background: #f8fafc; transition: border-color .2s, box-shadow .2s, background .2s;
+}
+.modal-overlay .modal-box input:focus, .modal-overlay .modal-box select:focus { background: #fff; }
+
+@media (max-width: 480px) {
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .modal-overlay .modal-box {
+    max-width: none; border-radius: 1.5rem 1.5rem 0 0; max-height: 92vh; max-height: 92dvh;
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  }
+  .modal-overlay.visible .modal-box { animation-name: ptm-sheet; animation-duration: .28s; }
+}
+
+/* ---------- Phones: no iOS zoom on focus, finger-sized targets ---------- */
+@media (max-width: 640px) {
+  .page-staff input, .page-staff select, .page-staff textarea { font-size: 16px; }
+}
+@media (pointer: coarse) {
+  .page-staff button { min-height: 44px; }
+  .page-staff .admin-delete-btn, .page-staff .class-delete-btn, .page-staff .room-delete-btn { min-width: 44px; }
+}
+
+/* =========================================================
+   ADMIN PAGE
+   ========================================================= */
+
+/* The big "now serving" number */
+.page-admin #admin-current-number {
+  font-size: clamp(4rem, 22vw, 6.5rem); line-height: 1; letter-spacing: -.04em; font-weight: 900;
+  background: linear-gradient(135deg, #4338ca, #7c3aed 55%, #06b6d4);
+  -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 10px 18px rgba(99,102,241,.25));
+}
+.page-admin #admin-room-info {
+  display: inline-block; padding: .25rem .8rem; border-radius: 9999px; background: #eef2ff; color: #4338ca; font-weight: 700;
+}
+.page-admin #next-btn {
+  min-height: 3.6rem; font-size: 1.15rem; letter-spacing: .08em; border-radius: 1.1rem;
+  box-shadow: 0 18px 32px -14px rgba(79,70,229,.85);
+}
+.page-admin #undo-btn, .page-admin #new-session-btn { border: 1px solid #e2e8f0; background: #fff; }
+.page-admin #undo-btn:hover, .page-admin #new-session-btn:hover { background: #f8fafc; border-color: #c7d2fe; }
+.page-admin #btn-join-as-admin { border-radius: 1.1rem; box-shadow: 0 12px 26px -18px rgba(79,70,229,.7); }
+
+/* Waiting + archive lists */
+.page-admin .waiting-list {
+  max-height: min(26rem, 52vh); overflow-y: auto; border-radius: 1.1rem; background: #fff;
+  box-shadow: 0 14px 30px -22px rgba(49,46,129,.45); -webkit-overflow-scrolling: touch;
+}
+.page-admin .waiting-row { transition: background .15s ease; }
+.page-admin .waiting-row:hover { background: #f5f7ff; }
+.page-admin .waiting-row .wnum {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 2.1rem; height: 2.1rem; padding: 0 .4rem;
+  border-radius: .7rem; background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+}
+.page-admin #archive-toggle { padding: .6rem .9rem; border-radius: .9rem; background: rgba(255,255,255,.7); border: 1px solid #e2e8f0; }
+.page-admin #archive-toggle:hover { background: #fff; }
+.page-admin #admin-joins-list > div { border-radius: 1rem; }
+
+/* =========================================================
+   SUPER ADMIN PAGE
+   ========================================================= */
+
+/* Tabs: scrollable pill bar */
+.page-super #screen-dashboard > .overflow-x-auto {
+  gap: .5rem; padding: .4rem; border-radius: 9999px; background: rgba(255,255,255,.75);
+  border: 1px solid rgba(255,255,255,.9); box-shadow: 0 12px 28px -20px rgba(49,46,129,.5);
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.page-super #screen-dashboard > .overflow-x-auto::-webkit-scrollbar { display: none; }
+.page-super .tab-btn { border-radius: 9999px; padding: .55rem 1.1rem; flex: 0 0 auto; transition: all .2s ease; }
+.page-super .tab-btn:not(.tab-active) { background: transparent; color: #475569; }
+.page-super .tab-btn:not(.tab-active):hover { background: #eef2ff; color: #4338ca; }
+.page-super .tab-btn.tab-active {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #fff;
+  box-shadow: 0 10px 22px -10px rgba(79,70,229,.85);
+}
+@media (min-width: 768px) { .page-super #screen-dashboard > .overflow-x-auto { width: fit-content; max-width: 100%; margin-inline: auto; } }
+
+/* Section headers */
+.page-super .collapsible-header { flex-wrap: wrap; gap: .6rem; border-radius: 1rem; }
+.page-super .collapse-icon {
+  min-width: 0; width: 1.8rem; height: 1.8rem; line-height: 1.8rem; font-size: .7rem; border-radius: 9999px;
+  background: #eef2ff; display: inline-block; text-align: center;
+}
+
+/* Lists become responsive card grids */
+.page-super #classes-list, .page-super #rooms-list, .page-super #admins-list { display: grid; gap: .8rem; grid-template-columns: 1fr; }
+@media (min-width: 640px) {
+  .page-super #classes-list, .page-super #rooms-list, .page-super #admins-list { grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); }
+}
+.page-super #classes-list > *, .page-super #rooms-list > *, .page-super #admins-list > * { margin: 0 !important; }
+.page-super #classes-list > .text-center, .page-super #rooms-list > .text-center, .page-super #admins-list > .text-center { grid-column: 1 / -1; }
+
+.page-super #classes-list > div:not(.text-center),
+.page-super #rooms-list > div:not(.text-center),
+.page-super #admins-list > div:not(.text-center) {
+  position: relative; background: #fff; border: 1px solid #eef0f6; border-left: 4px solid #818cf8; border-radius: 1rem;
+  box-shadow: 0 10px 24px -20px rgba(49,46,129,.55); overflow-wrap: anywhere;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.page-super #rooms-list > div:not(.text-center)  { border-left-color: #a78bfa; }
+.page-super #admins-list > div:not(.text-center) { border-left-color: #22d3ee; }
+.page-super #classes-list > div:not(.text-center):hover,
+.page-super #rooms-list > div:not(.text-center):hover,
+.page-super #admins-list > div:not(.text-center):hover { transform: translateY(-2px); box-shadow: 0 18px 32px -20px rgba(49,46,129,.6); }
+
+/* Export buttons stack on very small phones */
+@media (max-width: 360px) {
+  .page-super #tab-export .grid { grid-template-columns: 1fr; }
+}
+
+/* =========================================================
+   INDEX (parents)
+   ========================================================= */
+body.page-index { overflow-x: clip; }
+
+/* Wider layout on tablets / desktops */
+@media (min-width: 768px)  { body.page-index > .max-w-lg { max-width: 52rem; } }
+@media (min-width: 1100px) { body.page-index > .max-w-lg { max-width: 72rem; } }
+
+@media (min-width: 768px) {
+  .page-index .hero { padding: calc(2.2rem + env(safe-area-inset-top)) 2.25rem 5rem; border-radius: 0 0 2.5rem 2.5rem; }
+  .page-index .hero h1 { font-size: clamp(1.45rem, 3vw, 2.1rem); }
+  .page-index .hero p { max-width: 36rem; font-size: 1.05rem; }
+  .page-index main { padding-inline: 2rem; }
+}
+
+/* Join form: comfortable centred card instead of a stretched strip */
+.page-index #screen-start .panel { max-width: 36rem; margin-inline: auto; }
+
+/* Queue cards: 1 column on phones, flowing grid on wider screens */
+.page-index #queue-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: 1rem; align-items: start; }
+.page-index #no-queues-msg { max-width: 30rem; margin-inline: auto; }
+.page-index #home-add-btn, .page-index .add-btn { min-height: 44px; }
+
+/* Small phones (<= 360px, e.g. iPhone SE, Galaxy A series) */
+@media (max-width: 360px) {
+  .page-index .hero { padding-inline: 1rem; padding-bottom: 3.8rem; }
+  .page-index .hero h1 { font-size: 1.25rem; }
+  .page-index .logo-badge { width: 48px; height: 48px; border-radius: 15px; }
+  .page-index main { padding-inline: .75rem; }
+  .page-index .panel { border-radius: 1.3rem; }
+  .page-index .step { font-size: .62rem; }
+  .page-index .ticket { border-radius: 1.2rem; }
+}
+
+/* Short landscape phones: keep the sticky turn alert from covering the cards */
+@media (max-height: 480px) and (orientation: landscape) {
+  .page-index .hero { padding-bottom: 3.2rem; }
+  .page-index #turn-alert { bottom: 3.2rem; }
+}
+
+/* ---------- Respect "reduce motion" ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .page-staff *, .page-staff *::before, .page-staff *::after,
+  .page-index *, .page-index *::before, .page-index *::after,
+  .modal-overlay * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}

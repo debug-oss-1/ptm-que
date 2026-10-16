@@ -1,0 +1,125 @@
+  // Function to render queue cards - ONE CARD PER QUEUE ENTRY (never combine)
+  function renderQueueCards(queues) {
+    if (!queues || queues.length === 0) {
+      queueCardsContainer.innerHTML = '';
+      noQueuesMsg.classList.remove('hidden');
+      return;
+    }
+
+    noQueuesMsg.classList.add('hidden');
+
+    // Load user's own queued entries for separate cards
+    let userEntries = [];
+    try {
+      const stored = localStorage.getItem('ptm_joined_queues');
+      userEntries = stored ? JSON.parse(stored) : [];
+    } catch (e) {}
+
+    const cards = new Map();
+
+    // Prefer user's own entries (each gets its own card, separate)
+    userEntries.forEach(entry => {
+      const cardId = entry.entryId || (entry.roomId + '-' + (entry.queueNumber || entry.assignedNumber || '0'));
+      if (!cards.has(cardId)) {
+        cards.set(cardId, buildCardFromEntry(entry));
+      }
+    });
+
+    // If no user entries but Firebase queues exist, render each queue as separate card
+    if (cards.size === 0) {
+      queues.forEach(queue => {
+        const cardId = queue.roomId + '-' + (queue.queueNumber || '0');
+        if (!cards.has(cardId)) {
+          cards.set(cardId, buildCardFromQueue(queue));
+        }
+      });
+    }
+
+    queueCardsContainer.innerHTML = Array.from(cards.values()).join('');
+  }
+
+  function buildCardFromEntry(entry) {
+    const userNumber = entry.queueNumber || entry.assignedNumber || 0;
+    const status = entry.status || 'waiting';
+    const isYourTurn = status === 'active' || status === 'current';
+    const isCompleted = status === 'completed';
+    const className = entry.class || entry.classId || 'N/A';
+    const section = entry.section || '-';
+    const roomName = entry.room || entry.roomId || 'N/A';
+    const teacher = entry.teacherName || 'Unknown';
+    const meetingLabel = (entry.meetingType === 'CT' || entry.meeting === 'Class Teacher') ? 'Class Teacher' : 'Subject Teacher';
+    const meetingColor = (entry.meetingType === 'CT' || entry.meeting === 'Class Teacher') ? 'bg-violet-100 text-violet-700' : 'bg-cyan-100 text-cyan-700';
+    const accentColor = (entry.meetingType === 'CT') ? 'from-violet-400 via-indigo-500 to-purple-500' : 'from-cyan-400 via-sky-500 to-blue-500';
+
+    return `<div class="queue-card group relative overflow-hidden rounded-2xl bg-gradient-to-br from-white via-slate-50 to-white shadow-[0_4px_30px_rgba(0,0,0,0.06)] border border-slate-200 hover:shadow-[0_8px_40px_rgba(79,70,229,0.12)] transition-all duration-300 hover:-translate-y-0.5 mx-2 sm:mx-auto ${isYourTurn ? 'ring-2 ring-emerald-400 shadow-emerald-100/60' : ''} ${isCompleted ? 'opacity-70 grayscale' : ''}">
+      <div class="h-1.5 w-full bg-gradient-to-r ${accentColor}"></div>
+      <div class="p-4 sm:p-5">
+        <div class="flex items-start justify-between gap-3 mb-3">
+          <div class="min-w-0 flex-1">
+            <div class="text-[10px] font-extrabold uppercase tracking-[0.15em] text-slate-400 mb-0.5">Queue Entry</div>
+            <h3 class="text-base font-extrabold text-slate-800 truncate leading-tight">Class ${className} — Section ${section}</h3>
+            <div class="flex items-center gap-2 mt-1">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-slate-100 text-slate-600">Room ${roomName}</span>
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold ${meetingColor}">${meetingLabel}</span>
+            </div>
+          </div>
+          <div class="flex flex-col items-end gap-1.5 shrink-0">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${isYourTurn ? 'bg-emerald-100 text-emerald-700' : isCompleted ? 'bg-slate-200 text-slate-500' : 'bg-amber-50 text-amber-700'}">
+              <span class="w-1.5 h-1.5 rounded-full ${isYourTurn ? 'bg-emerald-500 animate-pulse' : isCompleted ? 'bg-slate-400' : 'bg-amber-400'}"></span>
+              ${isYourTurn ? 'YOUR TURN' : isCompleted ? 'Completed' : 'Waiting'}
+            </span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 mb-3 p-3 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100/60">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-md flex items-center justify-center shrink-0">
+            <span class="text-white text-xl font-black leading-none">#${userNumber}</span>
+          </div>
+          <div>
+            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">Queue Number</div>
+            <div class="text-lg font-extrabold text-emerald-700">Token #${userNumber}</div>
+          </div>
+          <div class="ml-auto text-right shrink-0">
+            <div class="text-[10px] font-bold text-slate-400">Position</div>
+            <div class="text-sm font-extrabold text-slate-700">#${userNumber}</div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 mb-2 text-sm text-slate-600">
+          <span class="w-4 h-4 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[10px] font-extrabold">T</span>
+          <span class="font-medium">${teacher}</span>
+        </div>
+
+        <div class="flex items-center gap-2 text-xs text-slate-500 mb-2">
+          <span class="font-medium">Status:</span>
+          <span class="font-bold ${isYourTurn ? 'text-emerald-600' : isCompleted ? 'text-slate-400' : 'text-amber-600'}">${isYourTurn ? 'Your Turn — Proceed to room' : isCompleted ? 'Meeting Completed' : 'Waiting in queue'}</span>
+        </div>
+
+        <div class="text-xs text-slate-500 leading-relaxed bg-slate-50 rounded-xl p-3 border border-slate-100">
+          <div><span class="font-bold text-slate-600">Student:</span> ${entry.name || entry.studentName || 'N/A'}</div>
+          <div><span class="font-bold text-slate-600">Roll:</span> ${entry.rollNo || '-'}</div>
+          <div><span class="font-bold text-slate-600">Class/Section:</span> ${entry.class || entry.classId || 'N/A'} / ${entry.section || '-'}</div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function buildCardFromQueue(queue) {
+    const userNumber = queue.queueNumber || 0;
+    const isYourTurn = (queue.queueNumber || 0) <= 1 || queue.currentStudent === queue.queueNumber;
+    return buildCardFromEntry({
+      entryId: queue.roomId + '-' + userNumber,
+      roomId: queue.roomId,
+      room: queue.room || queue.roomId,
+      teacherName: queue.teacherName,
+      meetingType: queue.meetingType,
+      meeting: queue.meeting,
+      classId: queue.classId,
+      class: queue.class,
+      section: queue.section,
+      name: queue.name || queue.studentName,
+      rollNo: queue.rollNo,
+      queueNumber: userNumber,
+      status: isYourTurn ? 'active' : 'waiting'
+    });
+  }
