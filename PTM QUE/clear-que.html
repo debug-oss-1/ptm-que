@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PTM – Clear All Queues</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Arial,sans-serif;background:#f1f5f9;margin:0;padding:20px;color:#0f172a}
+    .wrap{max-width:720px;margin:auto}
+    .card{background:#fff;border-radius:14px;padding:20px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+    h1{font-size:22px;margin:0 0 6px}
+    p{color:#475569;line-height:1.5}
+    .warn{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:12px;border-radius:10px;margin:12px 0}
+    table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14px}
+    th,td{text-align:left;padding:8px;border-bottom:1px solid #e2e8f0}
+    label.opt{display:flex;gap:8px;align-items:flex-start;margin:10px 0;font-size:14px}
+    input[type=text]{padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-size:15px;width:200px}
+    button{padding:10px 18px;border:0;border-radius:8px;font-size:15px;cursor:pointer;font-weight:600}
+    #scanBtn{background:#e2e8f0}
+    #deleteBtn{background:#dc2626;color:#fff}
+    button:disabled{opacity:.5;cursor:not-allowed}
+    #log{font-family:ui-monospace,Consolas,monospace;font-size:13px;white-space:pre-wrap;color:#334155}
+    a{color:#2563eb}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>Clear All Queues</h1>
+    <p>Removes every queued student from every room in the database and resets each room's token counter to 0. Super-admin only.</p>
+    <div class="warn"><strong>This cannot be undone.</strong> Export your CSV/PDF reports first if you still need them.</div>
+    <p id="who">Checking login…</p>
+  </div>
+
+  <div class="card" id="panel" style="display:none">
+    <button id="scanBtn">1. Scan database</button>
+    <table id="summary" style="display:none">
+      <thead><tr><th>Room ID</th><th>Queued students</th><th>Archived records</th></tr></thead>
+      <tbody></tbody>
+      <tfoot><tr><th>Total</th><th id="totQ">0</th><th id="totA">0</th></tr></tfoot>
+    </table>
+
+    <label class="opt"><input type="checkbox" id="optSessions" checked />
+      <span>Reset room sessions (current token &amp; last number back to 0)</span></label>
+    <label class="opt"><input type="checkbox" id="optArchive" />
+      <span><strong>Also delete archive</strong> (the history used for CSV/PDF exports). Leave unchecked to keep reports.</span></label>
+
+    <p>Type <strong>DELETE</strong> to confirm:</p>
+    <input type="text" id="confirmText" autocomplete="off" />
+    <button id="deleteBtn" disabled>2. Delete all queues</button>
+    <p id="log"></p>
+    <p><a href="super-admin.html">← Back to Super Admin</a></p>
+  </div>
+</div>
+
+<script type="module">
+  import { db, PATHS } from "./assets/firebase.js";
+  import { Auth } from "./assets/auth.js";
+  import { ref, get, update, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-database.js";
+
+  const $ = (id) => document.getElementById(id);
+  const log = (m) => { $("log").textContent += m + "\n"; };
+  let scanned = false;
+
+  await Auth.init();
+  if (!Auth.isAuthenticated()) { location.href = "login.html"; }
+  else if (!Auth.isSuperAdmin()) { $("who").textContent = "Access denied: super-admin only."; }
+  else {
+    $("who").textContent = "Logged in as " + (Auth.getName() || "super-admin");
+    $("panel").style.display = "block";
+  }
+
+  function updateDeleteState() {
+    $("deleteBtn").disabled = !(scanned && $("confirmText").value.trim() === "DELETE");
+  }
+  $("confirmText").addEventListener("input", updateDeleteState);
+
+  let roomIds = [];
+
+  $("scanBtn").addEventListener("click", async () => {
+    $("scanBtn").disabled = true;
+    $("log").textContent = "";
+    try {
+      const snap = await get(ref(db, PATHS.ROOMS_ROOT));
+      const rooms = snap.val() || {};
+      roomIds = Object.keys(rooms);
+      const tbody = $("summary").querySelector("tbody");
+      tbody.innerHTML = "";
+      let tq = 0, ta = 0;
+      for (const id of roomIds) {
+        const q = Object.keys(rooms[id].students || {}).length;
+        const a = Object.keys(rooms[id].archive || {}).length;
+        tq += q; ta += a;
+        const tr = document.createElement("tr");
+        [id, q, a].forEach(v => { const td = document.createElement("td"); td.textContent = v; tr.appendChild(td); });
+        tbody.appendChild(tr);
+      }
+      $("totQ").textContent = tq; $("totA").textContent = ta;
+      $("summary").style.display = "table";
+      scanned = true;
+      if (!roomIds.length) log("No rooms found – nothing to delete.");
+    } catch (e) {
+      log("Scan failed: " + e.message);
+    }
+    $("scanBtn").disabled = false;
+    updateDeleteState();
+  });
+
+  $("deleteBtn").addEventListener("click", async () => {
+    if (!confirm("Last chance: permanently delete all queue entries?")) return;
+    $("deleteBtn").disabled = true;
+    $("log").textContent = "";
+    const resetSessions = $("optSessions").checked;
+    const delArchive = $("optArchive").checked;
+    try {
+      // One atomic multi-path update: setting a path to null deletes it.
+      const updates = {};
+      for (const id of roomIds) {
+        updates[PATHS.ROOM_STUDENTS(id)] = null;
+        if (delArchive) updates[PATHS.ROOM_ARCHIVE(id)] = null;
+        if (resetSessions) {
+          updates[PATHS.ROOM_SESSION(id)] = {
+            currentStudent: 0, lastNumber: 0, active: true, startedAt: serverTimestamp()
+          };
+        }
+      }
+      await update(ref(db), updates);
+      log(`Done. Cleared ${roomIds.length} room(s)` + (delArchive ? " including archive." : ". Archive kept."));
+      scanned = false;
+      $("confirmText").value = "";
+      $("summary").style.display = "none";
+    } catch (e) {
+      log("Delete failed: " + e.message + "\n(Check that your Firebase rules allow super-admin writes.)");
+    }
+    updateDeleteState();
+  });
+</script>
+</body>
+</html>
